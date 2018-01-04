@@ -176,9 +176,10 @@
         var h1 = HASH_INIT;
         var h2 = HASH_INIT;
         var rh = new RollHash();
-        //console.log(triggerValue)
+        var trail = undefined;
+        
         for (var i = 0, len = bytes.length; i < len; i++) {
-            var thisByte = bytes[i];
+            var thisByte = bytes[i] || 256;
 
             h1 = fnv(h1, thisByte);
             h2 = fnv(h2, thisByte);
@@ -186,16 +187,21 @@
             rh.update(thisByte);
 
             if (i === (len - 1) || rh.sum() % triggerValue === (triggerValue - 1)) {
-                signatures[0] += B64.charAt(h1&63);
-                signatures[2] = triggerValue;
-                h1 = HASH_INIT;
+                if(signatures[0].length < 63) {
+                    signatures[0] += B64.charAt(h1&63);
+                    h1 = HASH_INIT;
+                } else {
+                    trail = B64.charAt(h1&63);
+                }   
             }
             if (i === (len - 1) || rh.sum() % (triggerValue * 2) === (triggerValue * 2 - 1) ) {
                 signatures[1] += B64.charAt(h2&63);
-                signatures[2] = triggerValue;
                 h2 = HASH_INIT;
             }
         }
+        if(trail) { signatures[0] += trail; }
+
+        signatures[2] = triggerValue;
         return signatures;
     }
 
